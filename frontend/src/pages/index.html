@@ -1,0 +1,322 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Email Smart Reply</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles/style.css" />
+    <script>
+      (function () {
+        try {
+          const saved = localStorage.getItem("esr-theme");
+          if (saved === "light") {
+            document.documentElement.classList.add("theme-light");
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-card">
+        <svg
+          class="brand-icon"
+          viewBox="0 0 64 64"
+          role="img"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#111827" />
+              <stop offset="100%" stop-color="#1f2937" />
+            </linearGradient>
+            <linearGradient id="flap" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#60a5fa" />
+              <stop offset="100%" stop-color="#3b82f6" />
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="14" fill="url(#bg)" />
+          <path
+            d="M14 20h36a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V26a6 6 0 0 1 6-6z"
+            fill="#1d4ed8"
+          />
+          <path d="M14 20h36l-18 16z" fill="url(#flap)" />
+          <path d="M14 50l16-12-16-18z" fill="#3b82f6" opacity="0.85" />
+          <path d="M50 50L34 38l16-18z" fill="#2563eb" opacity="0.85" />
+          <circle cx="45" cy="23" r="5" fill="#f97316" />
+        </svg>
+        <h1>Email Smart Reply</h1>
+        <div class="theme-toggle">
+          <button
+            type="button"
+            id="themeToggle"
+            aria-label="Alternar tema"
+            title="Alternar entre modo claro e escuro"
+          >
+            🌙
+          </button>
+        </div>
+      </div>
+      <p class="subtitle tagline">
+        Classifique rapidamente seus e-mails e receba respostas prontas em poucos
+        segundos.
+      </p>
+    </header>
+
+    <main>
+      {% if error %}
+      <div class="alert error">{{ error }}</div>
+      {% endif %}
+
+      <section class="card">
+        <h2>1) Envie um único e-mail</h2>
+        <form
+          action="/process"
+          method="post"
+          enctype="multipart/form-data"
+          id="singleEmailForm"
+          data-success="{{ success_message or '' }}"
+        >
+          <div class="grid grid-stack">
+            <div class="uploader">
+              <label for="email_file">Upload (.txt ou .pdf)</label>
+              <div class="input-actions">
+                <input
+                  type="file"
+                  id="email_file"
+                  name="email_file"
+                  accept=".txt,.pdf"
+                  title="Selecione um arquivo .txt ou .pdf contendo o e-mail"
+                />
+                <button
+                  type="submit"
+                  class="btn compact"
+                  title="Processar este e-mail"
+                >
+                  Processar
+                </button>
+              </div>
+            </div>
+            <div class="text-area">
+              <label for="email_text">Ou cole o conteúdo do e-mail</label>
+              <textarea
+                id="email_text"
+                name="email_text"
+                rows="8"
+                placeholder="Cole aqui o texto do e-mail..."
+                title="Cole o conteúdo completo do e-mail aqui"
+              >
+{% if input_text %}{{ input_text }}{% endif %}</textarea
+              >
+            </div>
+          </div>
+          <p id="processFeedback" class="status-message"></p>
+        </form>
+      </section>
+
+      {% if category %}
+      <section class="card result">
+        <h2>2) Resultado</h2>
+        <div class="result-grid">
+          <div class="result-info">
+            <p class="result-label">Classificação final</p>
+            <div class="pill pill-primary">{{ category }}</div>
+            <p class="result-label">Categoria principal</p>
+            <div class="pill pill-secondary">{{ primary_category }}</div>
+            <p class="muted meta">
+              Confiança estimada: <strong>{{ confidence }}</strong> · Motor:
+              {{ engine }}
+            </p>
+          </div>
+            <div class="result-reply">
+              <label>Resposta sugerida</label>
+              <pre class="reply-block">{{ suggested_reply }}</pre>
+              <button
+                class="btn outline"
+                id="copyBtn"
+                title="Copiar a resposta sugerida"
+              >
+                Copiar resposta
+              </button>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="card">
+        <h2>3) Processamento em lote (.zip)</h2>
+        <form
+          action="/batch_upload"
+          method="post"
+          enctype="multipart/form-data"
+          id="zipForm"
+          data-success="{{ zip_success_message or '' }}"
+        >
+          <div>
+            <label for="emails_zip"
+              >Envie um .zip contendo arquivos .txt e/ou .pdf</label
+            >
+            <div class="input-actions">
+              <input
+                type="file"
+                id="emails_zip"
+                name="emails_zip"
+                accept=".zip"
+                required
+                title="Selecione um arquivo .zip contendo e-mails"
+              />
+              <button
+                type="submit"
+                class="btn compact"
+                title="Processar todos os e-mails presentes no ZIP"
+              >
+                Processar ZIP
+              </button>
+            </div>
+          </div>
+          <p id="zipFeedback" class="status-message"></p>
+        </form>
+        {% if batch_done %}
+        <div class="alert" style="margin-top: 12px">
+          Relatório gerado:
+          <a href="{{ report_url }}" target="_blank">{{ report_url }}</a>
+        </div>
+        {% endif %}
+      </section>
+
+      {% if rows %}
+      <section class="card">
+        <h2>Prévia (até 50 linhas)</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Arquivo</th>
+                <th>Categoria binária</th>
+                <th>Categoria principal</th>
+                <th>Confiança</th>
+                <th>Engine</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+              <tr>
+                <td>{{ r.arquivo }}</td>
+                <td>{{ r.overall_category }}</td>
+                <td>{{ r.primary_category }}</td>
+                <td>{{ r.confidence }}</td>
+                <td>{{ r.engine }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if summary %}
+        <p class="muted">
+          Resumo: {% for k,v in summary.items() %} <strong>{{ k }}</strong>: {{
+          v }}&nbsp;&nbsp; {% endfor %}
+        </p>
+        {% endif %}
+      </section>
+      {% endif %}
+    </main>
+
+    <footer class="footer">
+      <div class="footer-row">
+        <div class="footer-column">
+          <h4>Como funciona</h4>
+          <ul>
+            <li><a href="#singleEmailForm">Processar e-mail</a></li>
+            <li><a href="#zipForm">Processar ZIP</a></li>
+            <li><a href="#singleEmailForm">Copiar resposta</a></li>
+            <li><a href="#zipForm">Relatórios CSV</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Sobre</h4>
+          <ul>
+            <li><a href="https://fastapi.tiangolo.com/" target="_blank">Baseado em FastAPI</a></li>
+            <li><a href="https://openai.com/" target="_blank">Integração GPT</a></li>
+            <li><a href="https://github.com" target="_blank">Código-fonte</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Suporte</h4>
+          <ul>
+            <li><a href="#singleEmailForm">Fale conosco</a></li>
+            <li><a href="#zipForm">Feedback</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-copy">
+        © {{ 2025 }} Email Smart Reply. Todos os direitos reservados.
+      </div>
+    </footer>
+
+    <script>
+      const btn = document.getElementById("copyBtn");
+      if (btn) {
+        btn.addEventListener("click", async () => {
+          const text = document.querySelector(".reply-block")?.innerText || "";
+          try {
+            await navigator.clipboard.writeText(text);
+            btn.innerText = "Copiado!";
+            setTimeout(() => (btn.innerText = "Copiar resposta"), 1600);
+          } catch (e) {
+            alert("Copie manualmente.");
+          }
+        });
+      }
+
+      const singleForm = document.getElementById("singleEmailForm");
+      const feedback = document.getElementById("processFeedback");
+      const themeBtn = document.getElementById("themeToggle");
+      const root = document.documentElement;
+      const THEME_KEY = "esr-theme";
+
+      const setTheme = (mode) => {
+        root.classList.toggle("theme-light", mode === "light");
+        themeBtn.textContent = mode === "light" ? "🌞" : "🌙";
+        localStorage.setItem(THEME_KEY, mode);
+      };
+
+      if (themeBtn) {
+          const initial = root.classList.contains("theme-light") ? "light" : "dark";
+          themeBtn.textContent = initial === "light" ? "🌞" : "🌙";
+          themeBtn.addEventListener("click", () => {
+            const next = root.classList.contains("theme-light") ? "dark" : "light";
+            setTheme(next);
+          });
+      }
+
+      const attachFormHandler = (form, feedbackEl, processingText) => {
+        if (!form || !feedbackEl) return;
+        form.addEventListener("submit", () => {
+          feedbackEl.textContent = processingText;
+          feedbackEl.classList.remove("success");
+          feedbackEl.classList.add("processing");
+        });
+
+        const successMessage = form.dataset.success;
+        if (successMessage) {
+          feedbackEl.textContent = successMessage;
+          feedbackEl.classList.remove("processing");
+          feedbackEl.classList.add("success");
+        }
+      };
+
+      attachFormHandler(
+        document.getElementById("singleEmailForm"),
+        document.getElementById("processFeedback"),
+        "Processando solicitação..."
+      );
+
+      attachFormHandler(
+        document.getElementById("zipForm"),
+        document.getElementById("zipFeedback"),
+        "Processando ZIP..."
+      );
+    </script>
+  </body>
+</html>

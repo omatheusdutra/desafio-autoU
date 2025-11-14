@@ -1,0 +1,50 @@
+from fastapi.testclient import TestClient
+import pytest
+
+from app import app
+
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+
+def test_index_route_renders_page(client):
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "Email Smart Reply" in resp.text
+    assert "Envie um único e-mail" in resp.text
+
+
+def test_batch_upload_uses_template(client, monkeypatch):
+    async def fake_handle_zip_payload(_data: bytes):
+        rows = [
+            {
+                "arquivo": "email1.txt",
+                "primary_category": "Status de chamado",
+                "overall_category": "Produtivo",
+                "confidence": 0.9,
+                "engine": "MockEngine",
+                "text_hash": "abc",
+                "reply": "Stub",
+            }
+        ]
+        summary = {"Produtivo": 1}
+        return rows, "report_123.csv", summary
+
+    monkeypatch.setattr(
+        "email_smart_reply.application.routes.batch.handle_zip_payload",
+        fake_handle_zip_payload,
+    )
+
+    files = {
+        "emails_zip": (
+            "emails.zip",
+            b"fake-bytes",
+            "application/zip",
+        )
+    }
+    resp = client.post("/batch_upload", files=files)
+    assert resp.status_code == 200
+    assert "report_123.csv" in resp.text
+    assert "email1.txt" in resp.text
