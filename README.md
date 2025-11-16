@@ -95,14 +95,9 @@ python -m pytest
 3. `render.yaml` cria o servico com `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`.
 4. Recomende definir `AUDIT_LOG_PATH`, `REPORTS_DIR`, `ENABLE_TRANSFORMERS` e `OPENAI_API_KEY` quando necessario.
 
-### Hugging Face Spaces (Docker)
-1. Crie um Space do tipo Docker.
-2. Envie todos os arquivos (incluindo `Dockerfile`).
-3. Configure `PORT=7860` e secrets opcionais (`OPENAI_API_KEY`).
-4. O Space monta o container e expõe o app automaticamente.
 
 ## ![badge](https://img.shields.io/badge/secao-Links-9333ea) Links sugeridos
-- **App hospedado:** informe a URL quando estiver ativo.
+- **App hospedado:** https://email-smart-reply-376k.onrender.com
 - **Video / demo:** inclua o link do video de apresentacao.
 
 ## ![badge](https://img.shields.io/badge/secao-Licenca-0ea5e9) Licenca
