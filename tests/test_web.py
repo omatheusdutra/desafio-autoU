@@ -13,7 +13,7 @@ def test_index_route_renders_page(client):
     resp = client.get("/")
     assert resp.status_code == 200
     assert "Email Smart Reply" in resp.text
-    assert "Envie um único e-mail" in resp.text
+    assert "Envie um unico e-mail" in resp.text
 
 
 def test_batch_upload_uses_template(client, monkeypatch):
@@ -30,7 +30,7 @@ def test_batch_upload_uses_template(client, monkeypatch):
             }
         ]
         summary = {"Produtivo": 1}
-        return rows, "report_123.csv", summary
+        return rows, "report_123.txt", summary
 
     monkeypatch.setattr(
         "backend_app.controllers.batch.handle_zip_payload",
@@ -46,5 +46,5 @@ def test_batch_upload_uses_template(client, monkeypatch):
     }
     resp = client.post("/batch_upload", files=files)
     assert resp.status_code == 200
-    assert "report_123.csv" in resp.text
+    assert "report_123.txt" in resp.text
     assert "email1.txt" in resp.text

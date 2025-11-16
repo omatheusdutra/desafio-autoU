@@ -78,7 +78,7 @@ uvicorn backend.app:app --reload --port 7860
 ## ![badge](https://img.shields.io/badge/secao-UI%20e%20ZIP-3b82f6) UI e processamento ZIP
 - Aceita arquivos `.txt`/`.pdf` individuais ou ZIP com multiplos itens respeitando `MAX_UPLOAD_MB` e `MAX_BATCH_ITEMS`.
 - Extracao de PDF tenta `pdfminer.six` e depois `PyPDF2`.
-- Cada lote gera `reports/report_<timestamp>.csv` acessivel via `/reports`.
+- Cada lote gera `reports/report_<timestamp>.txt` acessivel via `/reports`.
 - A UI mostra as primeiras linhas do lote conforme `BATCH_PREVIEW_LIMIT`.
 
 ## ![badge](https://img.shields.io/badge/secao-Testes-22c55e) Testes

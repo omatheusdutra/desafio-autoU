@@ -12,7 +12,7 @@ settings = get_settings()
 async def batch_upload(request: Request, emails_zip: UploadFile = File(...)):
     templates = request.app.state.templates
     data = await emails_zip.read()
-    rows, csv_name, summary = await handle_zip_payload(data)
+    rows, report_name, summary = await handle_zip_payload(data)
 
     preview_limit = max(1, settings.batch_preview_limit)
     return templates.TemplateResponse(
@@ -20,7 +20,7 @@ async def batch_upload(request: Request, emails_zip: UploadFile = File(...)):
         "index.html",
         {
             "batch_done": True,
-            "report_url": f"/reports/{csv_name}",
+            "report_url": f"/reports/{report_name}",
             "rows": rows[:preview_limit],
             "summary": summary,
             "zip_success_message": "ZIP processado e relatório disponível!",

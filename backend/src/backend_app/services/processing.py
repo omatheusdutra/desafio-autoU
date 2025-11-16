@@ -1,7 +1,6 @@
 """Business logic helpers for FastAPI routes."""
 
 import asyncio
-import csv
 import hashlib
 import io
 import time
@@ -18,14 +17,14 @@ from .nlp import classify_and_respond, extract_text_from_bytes
 settings = get_settings()
 
 MAX_UPLOAD_BYTES = settings.max_upload_mb * 1024 * 1024
-CSV_FIELDS = [
-    "arquivo",
-    "primary_category",
-    "overall_category",
-    "confidence",
-    "engine",
-    "text_hash",
-    "reply",
+REPORT_COLUMNS = [
+    ("arquivo", "Arquivo"),
+    ("overall_category", "Categoria binaria"),
+    ("primary_category", "Categoria principal"),
+    ("confidence", "Confianca"),
+    ("engine", "Engine"),
+    ("text_hash", "Hash"),
+    ("reply", "Resposta"),
 ]
 
 
@@ -60,13 +59,19 @@ async def classify_many(texts: List[str]) -> List[Dict[str, Any]]:
     return await asyncio.gather(*[_run(t) for t in texts])
 
 
-def write_csv_report(rows: List[Dict[str, Any]], csv_path: Path) -> None:
-    csv_path.parent.mkdir(parents=True, exist_ok=True)
-    with csv_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
+def write_txt_report(rows: List[Dict[str, Any]], report_path: Path) -> None:
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["\t".join(label for _, label in REPORT_COLUMNS)]
+    for row in rows:
+        values = []
+        for key, _ in REPORT_COLUMNS:
+            value = row.get(key, "")
+            if isinstance(value, float):
+                value = f"{value:.3f}"
+            value = str(value).replace("\t", " ").replace("\n", " ").strip()
+            values.append(value)
+        lines.append("\t".join(values))
+    report_path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def _log_classification(route: str, content: str, result: Dict[str, Any]) -> None:
@@ -149,12 +154,12 @@ async def handle_zip_payload(data: bytes) -> Tuple[List[Dict[str, Any]], str, Di
         rows.append(row)
 
     ts = int(time.time())
-    csv_name = f"report_{ts}.csv"
-    csv_path = settings.reports_dir / csv_name
-    await asyncio.to_thread(write_csv_report, rows, csv_path)
+    report_name = f"report_{ts}.txt"
+    report_path = settings.reports_dir / report_name
+    await asyncio.to_thread(write_txt_report, rows, report_path)
 
     summary: Dict[str, int] = {}
     for r in rows:
         summary[r["overall_category"]] = summary.get(r["overall_category"], 0) + 1
 
-    return rows, csv_name, summary
+    return rows, report_name, summary

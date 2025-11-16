@@ -15,6 +15,14 @@
           }
         } catch (e) {}
       })();
+      (function () {
+        const navEntry = performance.getEntriesByType
+          ? performance.getEntriesByType("navigation")[0]
+          : null;
+        if (navEntry && navEntry.type === "reload") {
+          window.location.replace("/");
+        }
+      })();
     </script>
   </head>
   <body>
@@ -59,8 +67,8 @@
         </div>
       </div>
       <p class="subtitle tagline">
-        Classifique rapidamente seus e-mails e receba respostas prontas em poucos
-        segundos.
+        Classifique rapidamente seus e-mails e receba respostas prontas em
+        poucos segundos.
       </p>
     </header>
 
@@ -70,7 +78,7 @@
       {% endif %}
 
       <section class="card">
-        <h2>1) Envie um único e-mail</h2>
+        <h2>1) Envie um unico e-mail</h2>
         <form
           action="/process"
           method="post"
@@ -125,23 +133,23 @@
             <p class="result-label">Categoria principal</p>
             <div class="pill pill-secondary">{{ primary_category }}</div>
             <p class="muted meta">
-              Confiança estimada: <strong>{{ confidence }}</strong> · Motor:
-              {{ engine }}
+              Confianca estimada: <strong>{{ confidence }}</strong> · Motor: {{
+              engine }}
             </p>
           </div>
-            <div class="result-reply">
-              <label>Resposta sugerida</label>
-              <pre class="reply-block">{{ suggested_reply }}</pre>
-              <button
-                class="btn outline"
-                id="copyBtn"
-                title="Copiar a resposta sugerida"
-              >
-                Copiar resposta
-              </button>
-            </div>
+          <div class="result-reply">
+            <label>Resposta sugerida</label>
+            <pre class="reply-block">{{ suggested_reply }}</pre>
+            <button
+              class="btn outline"
+              id="copyBtn"
+              title="Copiar a resposta sugerida"
+            >
+              Copiar resposta
+            </button>
           </div>
-        </section>
+        </div>
+      </section>
       {% endif %}
 
       <section class="card">
@@ -179,7 +187,7 @@
         </form>
         {% if batch_done %}
         <div class="alert" style="margin-top: 12px">
-          Relatório gerado:
+          Relatorio gerado:
           <a href="{{ report_url }}" target="_blank">{{ report_url }}</a>
         </div>
         {% endif %}
@@ -187,15 +195,15 @@
 
       {% if rows %}
       <section class="card">
-        <h2>Prévia (até 50 linhas)</h2>
+        <h2>Previa (ate 50 linhas)</h2>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>Arquivo</th>
-                <th>Categoria binária</th>
+                <th>Categoria binaria</th>
                 <th>Categoria principal</th>
-                <th>Confiança</th>
+                <th>Confianca</th>
                 <th>Engine</th>
               </tr>
             </thead>
@@ -227,25 +235,40 @@
         <div class="footer-column">
           <h4>Como funciona</h4>
           <ul>
-            <li><a href="#singleEmailForm">Processar e-mail</a></li>
-            <li><a href="#zipForm">Processar ZIP</a></li>
-            <li><a href="#singleEmailForm">Copiar resposta</a></li>
-            <li><a href="#zipForm">Relatórios CSV</a></li>
+            <li>
+              <a href="#singleEmailForm" data-scroll="#singleEmailForm"
+                >Processar e-mail</a
+              >
+            </li>
+            <li><a href="#zipForm" data-scroll="#zipForm">Processar ZIP</a></li>
+            <li><a href="#zipForm">Relatorios</a></li>
           </ul>
         </div>
         <div class="footer-column">
           <h4>Sobre</h4>
           <ul>
-            <li><a href="https://fastapi.tiangolo.com/" target="_blank">Baseado em FastAPI</a></li>
-            <li><a href="https://openai.com/" target="_blank">Integração GPT</a></li>
-            <li><a href="https://github.com" target="_blank">Código-fonte</a></li>
+            <li>
+              <a href="https://fastapi.tiangolo.com/" target="_blank"
+                >Baseado em FastAPI</a
+              >
+            </li>
+            <li>
+              <a href="https://openai.com/" target="_blank">Integração GPT</a>
+            </li>
+            <li>
+              <a
+                href="https://github.com/omatheusdutra/desafio-autoU"
+                target="_blank"
+                >Código-fonte</a
+              >
+            </li>
           </ul>
         </div>
         <div class="footer-column">
           <h4>Suporte</h4>
           <ul>
-            <li><a href="#singleEmailForm">Fale conosco</a></li>
-            <li><a href="#zipForm">Feedback</a></li>
+            <li><a href="#" id="contactLink">Fale conosco</a></li>
+            <li><a href="#" id="feedbackLink">Feedback</a></li>
           </ul>
         </div>
       </div>
@@ -253,6 +276,67 @@
         © {{ 2025 }} Email Smart Reply. Todos os direitos reservados.
       </div>
     </footer>
+
+    <template id="contactModalTemplate">
+      <div class="modal-backdrop" aria-modal="true" role="dialog">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>Fale conosco</h3>
+            <button type="button" class="modal-close" data-close-modal>
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Estamos disponiveis para ajudar nos canais abaixo:</p>
+            <ul class="contact-list">
+              <li><strong>Email:</strong> suporte@example.com</li>
+              <li><strong>Telefone:</strong> +55 (11) 4000-1000</li>
+              <li><strong>Horario:</strong> seg-sex, 09h as 18h (BRT)</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <a class="btn outline" href="mailto:suporte@example.com"
+              >Enviar e-mail</a
+            >
+            <button type="button" class="btn danger" data-close-modal>
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template id="feedbackModalTemplate">
+      <div class="modal-backdrop" aria-modal="true" role="dialog">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>Envie seu feedback</h3>
+            <button type="button" class="modal-close" data-close-modal>
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Compartilhe ideias para melhorar o Email Smart Reply:</p>
+            <textarea
+              id="feedbackText"
+              rows="4"
+              placeholder="Digite seu feedback..."
+              class="feedback-input"
+            ></textarea>
+            <p class="muted">
+              Levamos minutos para responder pelo email cadastrado.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn outline" data-close-modal>
+              Cancelar
+            </button>
+            <button type="button" class="btn" data-submit-feedback>
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <script>
       const btn = document.getElementById("copyBtn");
@@ -282,12 +366,16 @@
       };
 
       if (themeBtn) {
-          const initial = root.classList.contains("theme-light") ? "light" : "dark";
-          themeBtn.textContent = initial === "light" ? "🌞" : "🌙";
-          themeBtn.addEventListener("click", () => {
-            const next = root.classList.contains("theme-light") ? "dark" : "light";
-            setTheme(next);
-          });
+        const initial = root.classList.contains("theme-light")
+          ? "light"
+          : "dark";
+        themeBtn.textContent = initial === "light" ? "🌞" : "🌙";
+        themeBtn.addEventListener("click", () => {
+          const next = root.classList.contains("theme-light")
+            ? "dark"
+            : "light";
+          setTheme(next);
+        });
       }
 
       const attachFormHandler = (form, feedbackEl, processingText) => {
@@ -317,6 +405,74 @@
         document.getElementById("zipFeedback"),
         "Processando ZIP..."
       );
+
+      const contactLink = document.getElementById("contactLink");
+      const feedbackLink = document.getElementById("feedbackLink");
+      const contactTemplate = document.getElementById("contactModalTemplate");
+      const feedbackTemplate = document.getElementById("feedbackModalTemplate");
+      let activeModal = null;
+
+      const closeModal = () => {
+        if (activeModal) {
+          activeModal.remove();
+          activeModal = null;
+        }
+      };
+
+      const openModal = (template) => {
+        if (!template || activeModal) return;
+        activeModal = template.content.firstElementChild.cloneNode(true);
+        activeModal.classList.add("open");
+        const closers = activeModal.querySelectorAll("[data-close-modal]");
+        closers.forEach((btn) => btn.addEventListener("click", closeModal));
+        activeModal.addEventListener("click", (ev) => {
+          if (ev.target === activeModal) closeModal();
+        });
+        const submitBtn = activeModal.querySelector("[data-submit-feedback]");
+        if (submitBtn) {
+          submitBtn.addEventListener("click", () => {
+            const text = activeModal
+              .querySelector("#feedbackText")
+              ?.value?.trim();
+            if (text) {
+              alert("Obrigado! Seu feedback foi recebido.");
+              closeModal();
+            } else {
+              alert("Digite seu feedback antes de enviar.");
+            }
+          });
+        }
+        document.body.appendChild(activeModal);
+      };
+
+      const smoothScrollTo = (selector) => {
+        const el = document.querySelector(selector);
+        if (!el) return;
+        const top = el.getBoundingClientRect().top + window.scrollY - 40;
+        window.scrollTo({ top, behavior: "smooth" });
+        el.classList.add("highlight-card");
+        setTimeout(() => el.classList.remove("highlight-card"), 1200);
+      };
+
+      document.querySelectorAll("[data-scroll]").forEach((node) => {
+        node.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          smoothScrollTo(node.getAttribute("data-scroll"));
+        });
+      });
+
+      if (contactLink) {
+        contactLink.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          openModal(contactTemplate);
+        });
+      }
+      if (feedbackLink) {
+        feedbackLink.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          openModal(feedbackTemplate);
+        });
+      }
     </script>
   </body>
 </html>

@@ -1,0 +1,13 @@
+arquivo,primary_category,overall_category,confidence,engine,text_hash,reply
+helo.txt,Status de chamado,Produtivo,0.55,Heuristic,a20562d46de1482f6d78dd4a75a673be9e0fc6de0258e3eddbd8d236bec40d0d,"Olá!
+
+Estamos acompanhando o chamado e queremos manter você atualizado(a). Para avançarmos, confirme o número do protocolo e, se possível, algum identificador (CPF/CNPJ ou referência interna). Assim que tivermos novidades, retornaremos em até 24h úteis.
+
+Conte conosco,
+Equipe de Suporte"
+teste.txt,Status de chamado,Produtivo,0.55,Heuristic,219cc693985d6f0bf55ec7d31360e7829d613037c1c1b9cedd169215f783b7e9,"Olá!
+
+Estamos acompanhando o chamado e queremos manter você atualizado(a). Para avançarmos, confirme o número do protocolo e, se possível, algum identificador (CPF/CNPJ ou referência interna). Assim que tivermos novidades, retornaremos em até 24h úteis.
+
+Conte conosco,
+Equipe de Suporte"
