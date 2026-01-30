@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Email Smart Reply</title>
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles/style.css" />
+    <link rel="icon" href="/assets/favicon.svg?v=20260130" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles/style.css?v=20260130" />
     <script>
       (function () {
         try {
@@ -74,7 +74,7 @@
 
     <main>
       {% if error %}
-      <div class="alert error">{{ error }}</div>
+      <div class="alert error" role="alert">{{ error }}</div>
       {% endif %}
 
       <section class="card">
@@ -102,7 +102,8 @@
                   class="btn compact"
                   title="Processar este e-mail"
                 >
-                  Processar
+                  <span class="btn-label">Processar</span>
+                  <span class="spinner" aria-hidden="true"></span>
                 </button>
               </div>
             </div>
@@ -119,7 +120,13 @@
               >
             </div>
           </div>
-          <p id="processFeedback" class="status-message"></p>
+          <div class="inline-options">
+            <label class="checkbox">
+              <input type="checkbox" id="useQueue" />
+              Processar via fila (texto ou arquivo)
+            </label>
+          </div>
+          <p id="processFeedback" class="status-message" role="status" aria-live="polite"></p>
         </form>
       </section>
 
@@ -129,12 +136,36 @@
         <div class="result-grid">
           <div class="result-info">
             <p class="result-label">Classificação final</p>
-            <div class="pill pill-primary">{{ category }}</div>
-            <p class="result-label">Categoria principal</p>
-            <div class="pill pill-secondary">{{ primary_category }}</div>
+            <div class="pill pill-primary" id="overallCategoryText">
+              {{ category }}
+            </div>
+            <p class="muted small" id="overallCategoryHint"></p>
+            <p class="result-label">
+              Categoria principal
+              <span
+                class="hint"
+                title="Tema específico identificado no e-mail (ex.: Status de chamado)."
+              >
+                ?
+              </span>
+            </p>
+            <div class="pill pill-secondary" id="primaryCategoryText">
+              {{ primary_category }}
+            </div>
+            <p class="muted small" id="primaryCategoryHint"></p>
             <p class="muted meta">
-              Confianca estimada: <strong>{{ confidence }}</strong> · Motor: {{
-              engine }}
+              Confiança estimada:
+              <strong
+                title="Nível de certeza do modelo (0 a 1). Quanto maior, mais confiante."
+              >
+                {{ confidence }}
+              </strong>
+              · Motor:
+              <strong
+                title="Modelo ou engine responsável pela classificação (ex.: Transformers, Heurística)."
+              >
+                {{ engine }}
+              </strong>
             </p>
           </div>
           <div class="result-reply">
@@ -151,8 +182,80 @@
         </div>
       </section>
       {% endif %}
+      <span
+        id="singleDoneFlag"
+        class="hidden"
+        data-done="{% if category %}1{% else %}0{% endif %}"
+        data-category="{{ category or '' }}"
+        data-engine="{{ engine or '' }}"
+      ></span>
+      <section class="card result hidden" id="jobResultCard">
+        <h2>2) Resultado (fila)</h2>
+        <div class="result-grid">
+          <div class="result-info">
+            <p class="result-label">Classificação final</p>
+            <div class="pill pill-primary" id="jobCategory">-</div>
+            <p class="muted small" id="jobOverallHint"></p>
+            <p class="result-label">Categoria principal</p>
+            <div class="pill pill-secondary" id="jobPrimary">-</div>
+            <p class="muted small" id="jobPrimaryHint"></p>
+            <p class="muted meta" id="jobMeta">Aguardando...</p>
+          </div>
+          <div class="result-reply">
+            <label>Resposta sugerida</label>
+            <pre class="reply-block" id="jobReply"></pre>
+            <button class="btn outline" id="copyJobBtn" title="Copiar a resposta sugerida">
+              Copiar resposta
+            </button>
+          </div>
+        </div>
+      </section>
+      <section class="card hidden" id="jobHistoryCard">
+        <div class="history-header">
+          <h2>Histórico recente</h2>
+          <div class="history-actions">
+            <div class="history-filter">
+              <span class="filter-label">Filtrar</span>
+              <select id="historyFilter">
+                <option value="all">Todos</option>
+                <option value="Único">Único</option>
+                <option value="Lote">Lote</option>
+              </select>
+            </div>
+            <button class="btn outline compact" id="historyClearBtn" type="button">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M7 5l3-2h4l3 2h3v2H4V5h3zm2 4h2v9H9V9zm4 0h2v9h-2V9z"
+                  fill="currentColor"
+                />
+              </svg>
+              Limpar
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Status</th>
+                <th>Tipo</th>
+                <th>
+                  Modo
+                  <span class="hint" title="Direto = processa na hora. Fila = processamento assíncrono via Redis + RQ.">
+                    ?
+                  </span>
+                </th>
+                <th>Categoria</th>
+                <th>Engine</th>
+              </tr>
+            </thead>
+            <tbody id="jobHistoryBody"></tbody>
+          </table>
+        </div>
+      </section>
 
-      <section class="card">
+      <section class="card" id="batchSection">
         <h2>3) Processamento em lote (.zip)</h2>
         <form
           action="/batch_upload"
@@ -179,19 +282,43 @@
                 class="btn compact"
                 title="Processar todos os e-mails presentes no ZIP"
               >
-                Processar ZIP
+                <span class="btn-label">Processar ZIP</span>
+                <span class="spinner" aria-hidden="true"></span>
               </button>
             </div>
           </div>
-          <p id="zipFeedback" class="status-message"></p>
+          <div class="inline-options">
+            <label class="checkbox">
+              <input type="checkbox" id="useBatchQueue" />
+              Processar via fila
+            </label>
+          </div>
+          <p id="zipFeedback" class="status-message" role="status" aria-live="polite"></p>
+          <div id="batchProgress" class="progress hidden" aria-live="polite" hidden>
+            <div class="progress-bar" id="batchProgressBar"></div>
+            <span id="batchProgressLabel"></span>
+          </div>
         </form>
+        <div id="batchQueueResult" class="alert hidden" style="margin-top: 12px"></div>
+        <p id="batchQueueStats" class="muted hidden" style="margin-top: 8px"></p>
         {% if batch_done %}
         <div class="alert" style="margin-top: 12px">
-          Relatorio gerado:
-          <a href="{{ report_url }}" target="_blank">{{ report_url }}</a>
+          Relatório gerado{% if batch_mode %} <span class="tag">{{ batch_mode }}</span>{% endif %}:
+          {% if report_urls %}
+          <a href="{{ report_urls.txt }}" target="_blank">TXT</a>
+          · <a href="{{ report_urls.csv }}" target="_blank">CSV</a>
+          · <a href="{{ report_urls.json }}" target="_blank">JSON</a>
+          {% endif %}
         </div>
+        {% if stats %}
+        <p class="muted" style="margin-top: 8px">
+          Total: {{ stats.total }} · Processados: {{ stats.processed }} · Erros: {{ stats.errors }} · Tempo:
+          {{ stats.duration_seconds }}s{% if stats.avg_seconds_per_item %} · Média: {{ stats.avg_seconds_per_item }}s/arquivo{% endif %}
+        </p>
+        {% endif %}
         {% endif %}
       </section>
+      <span id="batchDoneFlag" class="hidden" data-done="{% if batch_done %}1{% else %}0{% endif %}"></span>
 
       {% if rows %}
       <section class="card">
@@ -203,8 +330,9 @@
                 <th>Arquivo</th>
                 <th>Categoria binaria</th>
                 <th>Categoria principal</th>
-                <th>Confianca</th>
+                <th>Confiança</th>
                 <th>Engine</th>
+                <th>Erro</th>
               </tr>
             </thead>
             <tbody>
@@ -215,6 +343,7 @@
                 <td>{{ r.primary_category }}</td>
                 <td>{{ r.confidence }}</td>
                 <td>{{ r.engine }}</td>
+                <td class="error-cell">{{ r.error }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -273,7 +402,7 @@
         </div>
       </div>
       <div class="footer-copy">
-        © {{ 2025 }} Email Smart Reply. Todos os direitos reservados.
+        © {{ 2026 }} Email Smart Reply. Todos os direitos reservados.
       </div>
     </footer>
 
@@ -340,6 +469,7 @@
 
     <script>
       const btn = document.getElementById("copyBtn");
+      const copyJobBtn = document.getElementById("copyJobBtn");
       if (btn) {
         btn.addEventListener("click", async () => {
           const text = document.querySelector(".reply-block")?.innerText || "";
@@ -352,9 +482,37 @@
           }
         });
       }
+      if (copyJobBtn) {
+        copyJobBtn.addEventListener("click", async () => {
+          const text = document.getElementById("jobReply")?.innerText || "";
+          try {
+            await navigator.clipboard.writeText(text);
+            copyJobBtn.innerText = "Copiado!";
+            setTimeout(() => (copyJobBtn.innerText = "Copiar resposta"), 1600);
+          } catch (e) {
+            alert("Copie manualmente.");
+          }
+        });
+      }
 
       const singleForm = document.getElementById("singleEmailForm");
       const feedback = document.getElementById("processFeedback");
+      const useQueue = document.getElementById("useQueue");
+      const jobCard = document.getElementById("jobResultCard");
+      const jobCategory = document.getElementById("jobCategory");
+      const jobPrimary = document.getElementById("jobPrimary");
+      const jobMeta = document.getElementById("jobMeta");
+      const jobReply = document.getElementById("jobReply");
+      const jobPrimaryHint = document.getElementById("jobPrimaryHint");
+      const jobOverallHint = document.getElementById("jobOverallHint");
+      const primaryCategoryText = document.getElementById("primaryCategoryText");
+      const primaryCategoryHint = document.getElementById("primaryCategoryHint");
+      const overallCategoryText = document.getElementById("overallCategoryText");
+      const overallCategoryHint = document.getElementById("overallCategoryHint");
+      const jobHistoryCard = document.getElementById("jobHistoryCard");
+      const jobHistoryBody = document.getElementById("jobHistoryBody");
+      const historyFilter = document.getElementById("historyFilter");
+      const historyClearBtn = document.getElementById("historyClearBtn");
       const themeBtn = document.getElementById("themeToggle");
       const root = document.documentElement;
       const THEME_KEY = "esr-theme";
@@ -380,10 +538,14 @@
 
       const attachFormHandler = (form, feedbackEl, processingText) => {
         if (!form || !feedbackEl) return;
+        const buttons = form.querySelectorAll("button[type='submit']");
         form.addEventListener("submit", () => {
           feedbackEl.textContent = processingText;
           feedbackEl.classList.remove("success");
           feedbackEl.classList.add("processing");
+          form.classList.add("is-loading");
+          form.setAttribute("aria-busy", "true");
+          buttons.forEach((btn) => (btn.disabled = true));
         });
 
         const successMessage = form.dataset.success;
@@ -391,6 +553,9 @@
           feedbackEl.textContent = successMessage;
           feedbackEl.classList.remove("processing");
           feedbackEl.classList.add("success");
+          form.classList.remove("is-loading");
+          form.removeAttribute("aria-busy");
+          buttons.forEach((btn) => (btn.disabled = false));
         }
       };
 
@@ -443,6 +608,9 @@
           });
         }
         document.body.appendChild(activeModal);
+        const focusTarget =
+          activeModal.querySelector("textarea, button, a, input") || activeModal;
+        setTimeout(() => focusTarget.focus(), 0);
       };
 
       const smoothScrollTo = (selector) => {
@@ -471,6 +639,386 @@
         feedbackLink.addEventListener("click", (ev) => {
           ev.preventDefault();
           openModal(feedbackTemplate);
+        });
+      }
+
+      const CATEGORY_HINTS = {
+        "Status de chamado":
+          "Solicitação de atualização, andamento ou protocolo de um caso.",
+        "Suporte tecnico":
+          "Problemas técnicos, erros, instabilidade ou falhas no sistema.",
+        Financeiro:
+          "Cobrança, pagamento, reembolso, fatura ou dúvidas financeiras.",
+        "Documentos/Anexos":
+          "Envio, validação ou solicitação de documentos e anexos.",
+        "Acesso/Senha":
+          "Reset, desbloqueio, login ou problemas de autenticação.",
+        "Saudações/Improdutivo":
+          "Mensagem de cortesia ou sem necessidade de ação.",
+      };
+      const OVERALL_HINTS = {
+        Produtivo: "Requer ação ou resposta da equipe.",
+        Improdutivo: "Sem necessidade de ação imediata.",
+      };
+
+      const applyCategoryHint = (categoryText, target) => {
+        if (!target) return;
+        const hint = CATEGORY_HINTS[categoryText] || "";
+        target.textContent = hint;
+      };
+      const applyOverallHint = (overallText, target) => {
+        if (!target) return;
+        const hint = OVERALL_HINTS[overallText] || "";
+        target.textContent = hint;
+      };
+
+      const renderJobResult = (payload) => {
+        if (!jobCard) return;
+        jobCategory.textContent = payload.overall_category || "-";
+        jobPrimary.textContent = payload.primary_category || "-";
+        applyCategoryHint(payload.primary_category || "", jobPrimaryHint);
+        applyOverallHint(payload.overall_category || "", jobOverallHint);
+        jobMeta.textContent = `Confiança estimada: ${
+          payload.confidence ?? "-"
+        } · Motor: ${payload.engine || "-"}`;
+        jobReply.textContent = payload.reply || "";
+        jobCard.classList.remove("hidden");
+      };
+
+      const HISTORY_KEY = "esr-job-history";
+      const loadHistory = () => {
+        try {
+          return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        } catch (e) {
+          return [];
+        }
+      };
+      const saveHistory = (items) => {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 10)));
+      };
+      const renderHistory = () => {
+        if (!jobHistoryBody || !jobHistoryCard) return;
+        let items = loadHistory();
+        if (historyFilter && historyFilter.value !== "all") {
+          items = items.filter((item) => item.type === historyFilter.value);
+        }
+        if (!items.length) return;
+        jobHistoryBody.innerHTML = items
+          .map(
+            (item) => `
+            <tr>
+              <td>${item.time}</td>
+              <td>${item.status}</td>
+              <td>${item.type || "-"}</td>
+              <td>${item.mode || "-"}</td>
+              <td>${item.category || "-"}</td>
+              <td>${item.engine || "-"}</td>
+            </tr>`
+          )
+          .join("");
+        jobHistoryCard.classList.remove("hidden");
+      };
+
+      const statusMap = {
+        completed: "Concluído",
+        queued: "Na fila",
+        processing: "Processando",
+        failed: "Falhou",
+        not_found: "Não encontrado",
+      };
+
+      const addHistory = (payload) => {
+        const items = loadHistory();
+        const statusLabel = statusMap[payload.status] || "Concluído";
+        const entry = {
+          time: new Date().toLocaleTimeString("pt-BR"),
+          status: statusLabel,
+          type: payload.type || "-",
+          mode: payload.mode || "-",
+          category: payload.overall_category || "-",
+          engine: payload.engine || "-",
+          key: payload.key || null,
+        };
+        if (entry.key) {
+          const idx = items.findIndex((item) => item.key === entry.key);
+          if (idx >= 0) {
+            items[idx] = { ...items[idx], ...entry };
+          } else {
+            items.unshift(entry);
+          }
+        } else {
+          items.unshift(entry);
+        }
+        saveHistory(items);
+        renderHistory();
+      };
+
+      renderHistory();
+      if (primaryCategoryText) {
+        applyCategoryHint(primaryCategoryText.textContent.trim(), primaryCategoryHint);
+      }
+      if (overallCategoryText) {
+        applyOverallHint(overallCategoryText.textContent.trim(), overallCategoryHint);
+      }
+      if (historyFilter) {
+        historyFilter.addEventListener("change", () => {
+          renderHistory();
+        });
+      }
+      if (historyClearBtn) {
+        historyClearBtn.addEventListener("click", () => {
+          localStorage.removeItem(HISTORY_KEY);
+          if (jobHistoryBody) jobHistoryBody.innerHTML = "";
+          if (jobHistoryCard) jobHistoryCard.classList.add("hidden");
+        });
+      }
+      const singleDoneFlag = document.getElementById("singleDoneFlag");
+      if (singleDoneFlag && singleDoneFlag.dataset.done === "1") {
+        addHistory({
+          status: "completed",
+          type: "Único",
+          mode: "Direto",
+          overall_category: singleDoneFlag.dataset.category || "-",
+          engine: singleDoneFlag.dataset.engine || "Direto",
+          key: `single:${Date.now()}`,
+        });
+      }
+      const batchDoneFlag = document.getElementById("batchDoneFlag");
+      if (batchDoneFlag && batchDoneFlag.dataset.done === "1") {
+        addHistory({
+          status: "completed",
+          type: "Lote",
+          mode: "Direto",
+          overall_category: "Lote (ZIP)",
+          engine: "Direto",
+          key: `batch:direct:${Date.now()}`,
+        });
+        setTimeout(() => {
+          smoothScrollTo("#batchSection");
+        }, 50);
+      }
+
+      const pollJob = async (jobId) => {
+        let attempts = 0;
+        const start = Date.now();
+        while (attempts < 60) {
+          attempts += 1;
+          try {
+            const res = await fetch(`/api/job/${jobId}`);
+            if (!res.ok) throw new Error("Status error");
+            const data = await res.json();
+            if (data.status === "completed" && data.result) {
+              renderJobResult(data.result);
+              addHistory({
+                status: "completed",
+                type: "Único",
+                mode: "Fila",
+                overall_category: data.result.overall_category,
+                engine: data.result.engine,
+                key: `single:${jobId}`,
+              });
+              return data;
+            }
+            if (data.status === "failed") {
+              throw new Error("Job failed");
+            }
+            const elapsed = Math.round((Date.now() - start) / 1000);
+            jobMeta.textContent =
+              data.message || `Aguardando... (${elapsed}s)`;
+          } catch (err) {
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        throw new Error("Timeout");
+      };
+
+      if (singleForm) {
+        singleForm.addEventListener("submit", async (ev) => {
+          const fileInput = document.getElementById("email_file");
+          const textInput = document.getElementById("email_text");
+          const useQueueChecked = useQueue && useQueue.checked;
+          if (!useQueueChecked) return;
+          ev.preventDefault();
+          feedback.textContent = "Enviando para fila...";
+          try {
+            let res;
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+              const formData = new FormData();
+              formData.append("email_file", fileInput.files[0]);
+              res = await fetch("/api/submit_file", {
+                method: "POST",
+                body: formData,
+              });
+            } else {
+              const text = textInput?.value?.trim();
+              if (!text) return;
+              res = await fetch("/api/submit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text }),
+              });
+            }
+            if (!res.ok) throw new Error("Falha ao enviar para fila");
+            const data = await res.json();
+            if (data.status === "completed" && data.result) {
+              renderJobResult(data.result);
+              addHistory({
+                status: "completed",
+                type: "Único",
+                mode: "Direto",
+                overall_category: data.result.overall_category,
+                engine: data.result.engine,
+                key: `single:${Date.now()}`,
+              });
+              feedback.textContent = "Processamento concluido!";
+              feedback.classList.add("success");
+              return;
+            }
+            if (data.job_id) {
+              feedback.textContent = "Na fila. Aguardando processamento...";
+              addHistory({
+                status: "queued",
+                type: "Único",
+                mode: "Fila",
+                overall_category: "Processamento único",
+                engine: "Fila",
+                key: `single:${data.job_id}`,
+              });
+              await pollJob(data.job_id);
+              feedback.textContent = "Processamento concluido!";
+              feedback.classList.add("success");
+            }
+          } catch (err) {
+            feedback.textContent = "Nao foi possivel processar via fila.";
+          } finally {
+            singleForm.classList.remove("is-loading");
+            singleForm.removeAttribute("aria-busy");
+            const buttons = singleForm.querySelectorAll("button[type='submit']");
+            buttons.forEach((btn) => (btn.disabled = false));
+          }
+        });
+      }
+
+      const batchForm = document.getElementById("zipForm");
+      const useBatchQueue = document.getElementById("useBatchQueue");
+      const batchProgress = document.getElementById("batchProgress");
+      const batchProgressBar = document.getElementById("batchProgressBar");
+      const batchProgressLabel = document.getElementById("batchProgressLabel");
+      const batchQueueResult = document.getElementById("batchQueueResult");
+      const batchQueueStats = document.getElementById("batchQueueStats");
+
+      const setBatchProgress = (processed, total) => {
+        if (!batchProgress || !batchProgressBar || !batchProgressLabel) return;
+        const pct = total ? Math.round((processed / total) * 100) : 0;
+        batchProgress.classList.remove("hidden");
+        batchProgress.removeAttribute("hidden");
+        batchProgressBar.style.width = `${pct}%`;
+        batchProgressLabel.textContent = `Processados: ${processed}/${total} (${pct}%)`;
+      };
+
+      const renderBatchResult = (reportUrls, summary, stats, modeLabel) => {
+        if (!batchQueueResult || !batchQueueStats) return;
+        if (reportUrls) {
+          const tag = modeLabel ? ` <span class="tag">${modeLabel}</span>` : "";
+          batchQueueResult.innerHTML = `Relatório gerado${tag}: <a href="${reportUrls.txt}" target="_blank">TXT</a> · <a href="${reportUrls.csv}" target="_blank">CSV</a> · <a href="${reportUrls.json}" target="_blank">JSON</a>`;
+          batchQueueResult.classList.remove("hidden");
+        }
+        if (stats) {
+          const avg = stats.avg_seconds_per_item
+            ? ` · Média: ${stats.avg_seconds_per_item}s/arquivo`
+            : "";
+          batchQueueStats.textContent = `Total: ${stats.total} · Processados: ${stats.processed} · Erros: ${stats.errors} · Tempo: ${stats.duration_seconds}s${avg}`;
+          batchQueueStats.classList.remove("hidden");
+        }
+      };
+
+      const pollBatchJob = async (jobId) => {
+        let attempts = 0;
+        while (attempts < 80) {
+          attempts += 1;
+          const res = await fetch(`/api/batch_job/${jobId}`);
+          if (!res.ok) throw new Error("Status error");
+          const data = await res.json();
+          if (data.progress) {
+            setBatchProgress(data.progress.processed, data.progress.total);
+          }
+          if (data.status === "completed") {
+            renderBatchResult(data.report_urls, data.summary, data.stats, "Fila");
+            addHistory({
+              status: "completed",
+              type: "Lote",
+              mode: "Fila",
+              overall_category: "Lote (ZIP)",
+              engine: "Fila",
+              key: `batch:${jobId}`,
+            });
+            return data;
+          }
+          if (data.status === "failed") {
+            throw new Error("Job failed");
+          }
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        throw new Error("Timeout");
+      };
+
+      if (batchForm) {
+        batchForm.addEventListener("submit", async (ev) => {
+          const useQueue = useBatchQueue && useBatchQueue.checked;
+          if (!useQueue) return;
+          ev.preventDefault();
+          const fileInput = document.getElementById("emails_zip");
+          if (!fileInput || !fileInput.files || !fileInput.files.length) return;
+          const formData = new FormData();
+          formData.append("emails_zip", fileInput.files[0]);
+          const zipFeedback = document.getElementById("zipFeedback");
+          try {
+            zipFeedback.textContent = "Enviando para fila...";
+            const res = await fetch("/api/batch_submit", {
+              method: "POST",
+              body: formData,
+            });
+            if (!res.ok) throw new Error("Falha no envio");
+            const data = await res.json();
+            if (data.status === "completed") {
+              zipFeedback.textContent = "Processamento concluido!";
+              zipFeedback.classList.add("success");
+              if (data.report_urls || data.stats) {
+                renderBatchResult(data.report_urls, data.summary, data.stats, "Fila");
+              }
+              addHistory({
+                status: "completed",
+                type: "Lote",
+                mode: "Fila",
+                overall_category: "Lote (ZIP)",
+                engine: "Fila",
+                key: `batch:queue:immediate:${Date.now()}`,
+              });
+              return;
+            }
+            if (data.job_id) {
+              zipFeedback.textContent = "Na fila. Aguardando processamento...";
+              addHistory({
+                status: "queued",
+                type: "Lote",
+                mode: "Fila",
+                overall_category: "Lote (ZIP)",
+                engine: "Fila",
+                key: `batch:${data.job_id}`,
+              });
+              await pollBatchJob(data.job_id);
+              zipFeedback.textContent = "Processamento concluido!";
+              zipFeedback.classList.add("success");
+            }
+          } catch (err) {
+            zipFeedback.textContent = "Nao foi possivel processar via fila.";
+          } finally {
+            batchForm.classList.remove("is-loading");
+            batchForm.removeAttribute("aria-busy");
+            const buttons = batchForm.querySelectorAll("button[type='submit']");
+            buttons.forEach((btn) => (btn.disabled = false));
+          }
         });
       }
     </script>

@@ -1,12 +1,5 @@
-from fastapi.testclient import TestClient
 import pytest
 
-from app import app
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
 
 
 def test_index_route_renders_page(client):
@@ -14,6 +7,7 @@ def test_index_route_renders_page(client):
     assert resp.status_code == 200
     assert "Email Smart Reply" in resp.text
     assert "Envie um unico e-mail" in resp.text
+    assert "Processar via fila" in resp.text
 
 
 def test_batch_upload_uses_template(client, monkeypatch):
@@ -27,13 +21,20 @@ def test_batch_upload_uses_template(client, monkeypatch):
                 "engine": "MockEngine",
                 "text_hash": "abc",
                 "reply": "Stub",
+                "error": "",
             }
         ]
         summary = {"Produtivo": 1}
-        return rows, "report_123.txt", summary
+        report_urls = {
+            "txt": "/reports/report_123.txt",
+            "csv": "/reports/report_123.csv",
+            "json": "/reports/report_123.json",
+        }
+        stats = {"total": 1, "processed": 1, "errors": 0, "duration_seconds": 0.1}
+        return rows, report_urls, summary, stats
 
     monkeypatch.setattr(
-        "backend_app.controllers.batch.handle_zip_payload",
+        "backend_app.presentation.controllers.batch.handle_zip_payload",
         fake_handle_zip_payload,
     )
 
@@ -46,5 +47,7 @@ def test_batch_upload_uses_template(client, monkeypatch):
     }
     resp = client.post("/batch_upload", files=files)
     assert resp.status_code == 200
-    assert "report_123.txt" in resp.text
+    assert "/reports/report_123.txt" in resp.text
+    assert "/reports/report_123.csv" in resp.text
+    assert "/reports/report_123.json" in resp.text
     assert "email1.txt" in resp.text

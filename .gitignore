@@ -1,8 +1,39 @@
 __pycache__/
-.venv/
-logs/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 *.swp
 .DS_Store
+
+# virtualenv / python tooling
+.venv/
+.env
+.env.*
+!.env.example
+.python-version
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.pytest_tmp/
+tests/.tmp/
+htmlcov/
+.coverage*
+
+# build artifacts
+build/
+dist/
+*.egg-info/
+
+# logs / reports
+logs/
+reports/
+
+# editor / os
+.idea/
+.vscode/
+Thumbs.db
+
+# frontend/node
+node_modules/
+frontend/node_modules/
+frontend/dist/

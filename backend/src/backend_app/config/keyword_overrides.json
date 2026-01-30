@@ -1,0 +1,46 @@
+{
+  "Status de chamado": [
+    "prazo",
+    "sla",
+    "retorno",
+    "andamento",
+    "protocolo"
+  ],
+  "Suporte tecnico": [
+    "instabilidade",
+    "erro 500",
+    "crash",
+    "lento"
+  ],
+  "Financeiro": [
+    "cobranca",
+    "reembolso",
+    "pagto",
+    "financeiro",
+    "boleto",
+    "pix"
+  ],
+  "Documentos/Anexos": [
+    "assinatura",
+    "certidao",
+    "comprovante"
+  ],
+  "Acesso/Senha": [
+    "resetar",
+    "desbloqueio",
+    "2fa",
+    "mfa"
+  ],
+  "Sauda??es/Improdutivo": [
+    "felicitacoes",
+    "parabenizacao",
+    "obrigado",
+    "obrigada",
+    "obrigado pelo retorno",
+    "agradeco",
+    "agradecemos",
+    "agradecimento",
+    "valeu",
+    "muito obrigado"
+  ]
+}
