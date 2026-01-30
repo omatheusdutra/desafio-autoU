@@ -8,6 +8,8 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "backend" / "src"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if SRC.exists() and str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
@@ -25,7 +27,7 @@ def app():
     from backend_app.config.settings import get_settings
 
     get_settings.cache_clear()
-    import app as app_module
+    import backend.app as app_module
 
     return app_module.app
 

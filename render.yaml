@@ -11,6 +11,10 @@ services:
         value: 10000
       - key: AUDIT_LOG_PATH
         value: logs/email_events.jsonl
+      - key: ENABLE_TRANSFORMERS
+        value: "false"
+      - key: ENABLE_WARMUP
+        value: "false"
       # - key: OPENAI_API_KEY
       #   sync: false
     healthCheckPath: /health
